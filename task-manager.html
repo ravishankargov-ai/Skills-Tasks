@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UKSDS Task Manager — Skill Development & Employment Dept, Uttarakhand</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --ink: #1a1d23; --ink-soft: #3c4150; --ink-muted: #7a8096;
+    --paper: #f8f7f4; --card: #ffffff; --border: #e2e0db; --border-light: #eeece8;
+    --critical:#c0392b; --critical-bg:#fdf2f1; --critical-border:#f5b7b1;
+    --high:#d35400;     --high-bg:#fdf5f0;     --high-border:#f5cba7;
+    --medium:#b7950b;   --medium-bg:#fdfbf0;   --medium-border:#f9e79f;
+    --low:#1a7a4a;      --low-bg:#f0faf5;      --low-border:#a9dfbf;
+    --info:#1a5276;     --info-bg:#f0f6fc;     --info-border:#a8c8e8;
+    --done:#1a7a4a;     --done-bg:#f0faf5;
+    --inprog:#1565c0;   --inprog-bg:#e8f0fe;
+    --pending:#7a8096;  --pending-bg:#f4f4f6;
+    --overdue:#c0392b;  --overdue-bg:#fdf2f1;
+    --blocked:#6d3b8a;  --blocked-bg:#f8f0fc;
+    --accent:#1a4f8a;   --accent-light:#e8f0fa;
+    --radius:8px; --radius-lg:12px;
+    --shadow:0 1px 4px rgba(0,0,0,.06),0 2px 12px rgba(0,0,0,.04);
+    --shadow-hover:0 4px 16px rgba(0,0,0,.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);font-size:14px;line-height:1.6;min-height:100vh;}
+
+  /* ── Setup screen ── */
+  #setupScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--paper);padding:24px;}
+  .setup-card{background:white;border-radius:16px;padding:36px;max-width:560px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.12);border:1px solid var(--border);}
+  .setup-logo{width:52px;height:52px;background:var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;color:white;font-size:22px;font-weight:700;margin-bottom:20px;}
+  .setup-card h1{font-size:20px;font-weight:700;margin-bottom:6px;}
+  .setup-card p{color:var(--ink-soft);margin-bottom:20px;line-height:1.7;}
+  .setup-steps{background:var(--paper);border-radius:10px;padding:16px;margin-bottom:20px;border:1px solid var(--border);}
+  .setup-steps ol{padding-left:18px;color:var(--ink-soft);font-size:13px;line-height:2;}
+  .setup-steps li{margin-bottom:4px;}
+  .setup-steps code{background:var(--accent-light);color:var(--accent);padding:1px 6px;border-radius:4px;font-size:12px;}
+  .url-input-row{display:flex;gap:8px;margin-bottom:8px;}
+  .url-input{flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none;transition:border .15s;}
+  .url-input:focus{border-color:var(--accent);}
+  .url-hint{font-size:12px;color:var(--ink-muted);margin-bottom:16px;}
+
+  /* ── Sync status ── */
+  .sync-badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 9px;border-radius:20px;font-weight:500;}
+  .sync-ok{background:var(--low-bg);color:var(--done);}
+  .sync-saving{background:var(--inprog-bg);color:var(--inprog);}
+  .sync-error{background:var(--overdue-bg);color:var(--overdue);}
+  .sync-loading{background:var(--medium-bg);color:var(--medium);}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .spin{display:inline-block;animation:spin .8s linear infinite;}
+
+  /* ── Header ── */
+  .header{background:var(--accent);color:white;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .header-left{display:flex;align-items:center;gap:10px;}
+  .header-logo{width:34px;height:34px;background:rgba(255,255,255,.18);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;}
+  .header-title{font-size:14px;font-weight:600;}
+  .header-sub{font-size:11px;opacity:.7;}
+  .header-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .btn{padding:6px 13px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:all .15s;white-space:nowrap;}
+  .btn-primary{background:white;color:var(--accent);}
+  .btn-primary:hover{background:#f0f6ff;}
+  .btn-ghost{background:rgba(255,255,255,.12);color:white;border:1px solid rgba(255,255,255,.2);}
+  .btn-ghost:hover{background:rgba(255,255,255,.22);}
+  .btn-sm{padding:4px 10px;font-size:12px;}
+  .btn-accent{background:var(--accent);color:white;}
+  .btn-accent:hover{background:#153d6e;}
+  .btn-cancel{background:var(--paper);color:var(--ink-soft);border:1px solid var(--border);}
+  .btn-cancel:hover{background:var(--border-light);}
+
+  /* ── Alert banner ── */
+  .alert-banner{background:var(--critical-bg);border-bottom:2px solid var(--critical);padding:8px 20px;display:none;align-items:center;gap:10px;font-size:13px;color:var(--critical);font-weight:500;}
+  .alert-banner.show{display:flex;}
+
+  /* ── Stats bar ── */
+  .stats-bar{background:white;border-bottom:1px solid var(--border);padding:10px 20px;display:flex;gap:20px;overflow-x:auto;flex-wrap:wrap;}
+  .stat-pill{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-soft);white-space:nowrap;}
+  .stat-pill .num{font-size:17px;font-weight:700;color:var(--ink);}
+  .dot{width:8px;height:8px;border-radius:50%;}
+  .dot-critical{background:var(--critical);} .dot-high{background:var(--high);}
+  .dot-medium{background:var(--medium);}     .dot-low{background:var(--low);}
+  .dot-done{background:var(--done);}
+
+  /* ── Layout ── */
+  .app-layout{display:flex;height:calc(100vh - 118px);min-height:300px;}
+  .sidebar{width:240px;min-width:200px;background:white;border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;padding:14px 0;}
+  .sidebar-section{margin-bottom:18px;}
+  .sidebar-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);padding:0 14px;margin-bottom:3px;}
+  .sidebar-item{display:flex;align-items:center;gap:7px;padding:7px 14px;cursor:pointer;font-size:13px;color:var(--ink-soft);border:none;background:transparent;width:100%;text-align:left;font-family:inherit;transition:background .12s;}
+  .sidebar-item:hover{background:var(--paper);color:var(--ink);}
+  .sidebar-item.active{background:var(--accent-light);color:var(--accent);font-weight:600;}
+  .sidebar-count{margin-left:auto;font-size:11px;background:var(--border);color:var(--ink-muted);border-radius:10px;padding:1px 6px;font-weight:600;}
+  .sidebar-item.active .sidebar-count{background:var(--accent);color:white;}
+
+  /* ── Content ── */
+  .content{flex:1;overflow-y:auto;padding:16px 20px;}
+  .toolbar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+  .toolbar-left{display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap;}
+  .search-input{padding:7px 11px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;background:white;color:var(--ink);min-width:180px;outline:none;transition:border .15s;}
+  .search-input:focus{border-color:var(--accent);}
+  select.filter-select{padding:7px 9px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;background:white;color:var(--ink);cursor:pointer;outline:none;}
+
+  /* ── Task cards ── */
+  .task-card{background:white;border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:9px;overflow:hidden;box-shadow:var(--shadow);transition:box-shadow .15s;}
+  .task-card:hover{box-shadow:var(--shadow-hover);}
+  .task-header{padding:13px 15px;display:flex;align-items:flex-start;gap:11px;cursor:pointer;}
+  .task-checkbox{width:18px;height:18px;border-radius:5px;border:2px solid var(--border);cursor:pointer;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;transition:all .15s;background:white;}
+  .task-checkbox.checked{background:var(--done);border-color:var(--done);}
+  .task-checkbox.checked::after{content:'✓';color:white;font-size:11px;font-weight:700;}
+  .task-main{flex:1;min-width:0;}
+  .task-title{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+  .task-title.done-title{text-decoration:line-through;color:var(--ink-muted);}
+  .task-meta{display:flex;gap:7px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--ink-muted);}
+  .task-actions{display:flex;gap:3px;flex-shrink:0;}
+  .icon-btn{width:28px;height:28px;border-radius:6px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--ink-muted);transition:background .12s;}
+  .icon-btn:hover{background:var(--paper);color:var(--ink);}
+
+  /* Tags */
+  .tag{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
+  .tag-critical{background:var(--critical-bg);color:var(--critical);border:1px solid var(--critical-border);}
+  .tag-high{background:var(--high-bg);color:var(--high);border:1px solid var(--high-border);}
+  .tag-medium{background:var(--medium-bg);color:var(--medium);border:1px solid var(--medium-border);}
+  .tag-low{background:var(--low-bg);color:var(--low);border:1px solid var(--low-border);}
+  .tag-info{background:var(--info-bg);color:var(--info);border:1px solid var(--info-border);}
+  .tag-done{background:var(--done-bg);color:var(--done);}
+  .tag-inprog{background:var(--inprog-bg);color:var(--inprog);}
+  .tag-pending{background:var(--pending-bg);color:var(--pending);}
+  .tag-overdue{background:var(--overdue-bg);color:var(--overdue);}
+  .tag-blocked{background:var(--blocked-bg);color:var(--blocked);}
+  .chip{display:inline-block;background:var(--paper);border:1px solid var(--border);border-radius:20px;padding:2px 7px;font-size:11px;color:var(--ink-soft);}
+
+  /* Priority borders */
+  .border-critical{border-left:4px solid var(--critical);}
+  .border-high{border-left:4px solid var(--high);}
+  .border-medium{border-left:4px solid var(--medium);}
+  .border-low{border-left:4px solid var(--low);}
+  .border-info{border-left:4px solid var(--info);}
+
+  /* Progress */
+  .progress-wrap{padding:0 15px 9px 44px;display:flex;align-items:center;gap:9px;}
+  .progress-bar{flex:1;height:5px;background:var(--border-light);border-radius:4px;overflow:hidden;}
+  .progress-fill{height:100%;border-radius:4px;transition:width .3s;}
+  .fill-critical{background:var(--critical);} .fill-high{background:var(--high);}
+  .fill-medium{background:var(--medium);}     .fill-low{background:var(--low);}
+  .fill-info{background:var(--info);}
+  .progress-pct{font-size:11px;font-weight:600;color:var(--ink-muted);white-space:nowrap;}
+
+  /* Subtasks */
+  .subtasks{border-top:1px solid var(--border-light);padding:9px 15px 9px 44px;display:none;}
+  .subtasks.open{display:block;}
+  .subtask-item{display:flex;align-items:flex-start;gap:9px;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:13px;}
+  .subtask-item:last-child{border-bottom:none;}
+  .subtask-check{width:15px;height:15px;border-radius:3px;border:1.5px solid var(--border);cursor:pointer;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;background:white;transition:all .12s;}
+  .subtask-check.checked{background:var(--done);border-color:var(--done);}
+  .subtask-check.checked::after{content:'✓';color:white;font-size:9px;font-weight:700;}
+  .subtask-body{flex:1;min-width:0;}
+  .subtask-title{font-weight:500;color:var(--ink);}
+  .subtask-title.done-title{text-decoration:line-through;color:var(--ink-muted);}
+  .subtask-meta{font-size:11px;color:var(--ink-muted);display:flex;gap:5px;}
+  .subtask-due{margin-left:auto;font-size:11px;font-weight:500;white-space:nowrap;}
+  .overdue{color:var(--overdue);} .soon{color:var(--high);} .ok{color:var(--ink-muted);} .due-done{color:var(--done);}
+
+  /* Notes */
+  .task-notes{border-top:1px solid var(--border-light);padding:9px 15px 11px 44px;display:none;font-size:13px;color:var(--ink-soft);background:#fafaf8;line-height:1.65;}
+  .task-notes.open{display:block;}
+  .notes-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-muted);margin-bottom:3px;}
+
+  /* Modal */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:1000;display:none;align-items:center;justify-content:center;padding:16px;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:white;border-radius:var(--radius-lg);width:100%;max-width:600px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+  .modal-header{padding:15px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+  .modal-header h3{flex:1;font-size:15px;font-weight:700;}
+  .modal-body{padding:18px;}
+  .modal-footer{padding:11px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+  .form-row{display:flex;gap:9px;margin-bottom:9px;flex-wrap:wrap;}
+  .form-group{display:flex;flex-direction:column;gap:3px;flex:1;min-width:130px;}
+  .form-label{font-size:11px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.06em;}
+  .form-input,.form-select,.form-textarea{padding:7px 9px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;color:var(--ink);background:white;outline:none;transition:border .15s;}
+  .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent);}
+  .form-textarea{resize:vertical;min-height:58px;line-height:1.5;}
+  .add-subtask-row{display:flex;gap:5px;margin-top:7px;padding-top:7px;border-top:1px dashed var(--border);}
+  .add-subtask-row .form-input{flex:1;}
+
+  /* Empty / loading */
+  .empty-state{text-align:center;padding:50px 20px;color:var(--ink-muted);}
+  .empty-state .ei{font-size:44px;margin-bottom:10px;}
+  .empty-state h3{font-size:15px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;}
+  .empty-state p{font-size:13px;}
+  .due-indicator{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:500;}
+
+  /* Offline banner */
+  .offline-bar{background:#fff3cd;border-bottom:1px solid #ffc107;padding:6px 20px;font-size:12px;color:#856404;display:none;align-items:center;gap:8px;}
+  .offline-bar.show{display:flex;}
+
+  @media(max-width:650px){
+    .sidebar{width:0;overflow:hidden;padding:0;}
+    .app-layout{height:auto;}
+    .content{padding:10px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Setup Screen ─────────────────────────────────────────── -->
+<div id="setupScreen">
+  <div class="setup-card">
+    <div class="setup-logo">UK</div>
+    <h1>UKSDS Task Manager Setup</h1>
+    <p>This app uses Google Sheets as its database so all employees share one live task list. Complete the one-time setup below — it takes about 5 minutes.</p>
+
+    <div class="setup-steps">
+      <strong style="font-size:13px;display:block;margin-bottom:8px;">One-time setup (done by admin only):</strong>
+      <ol>
+        <li>Go to <code>script.google.com</code> → <strong>New Project</strong></li>
+        <li>Delete existing code. Paste the <strong>Code.gs</strong> file contents</li>
+        <li>Click <strong>Deploy → New Deployment</strong></li>
+        <li>Type: <strong>Web App</strong> | Execute as: <strong>Me</strong> | Access: <strong>Anyone</strong></li>
+        <li>Click <strong>Deploy</strong> → <strong>Authorize</strong> → copy the <strong>Web App URL</strong></li>
+        <li>Paste the URL below and click <strong>Connect</strong></li>
+      </ol>
+    </div>
+
+    <div class="url-input-row">
+      <input type="url" class="url-input" id="scriptUrlInput"
+        placeholder="https://script.google.com/macros/s/…/exec">
+      <button class="btn btn-accent" onclick="connectToSheet()">Connect →</button>
+    </div>
+    <div class="url-hint" id="setupMsg">Paste your Google Apps Script Web App URL above.</div>
+
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
+      <button class="btn btn-cancel btn-sm" onclick="useOfflineMode()" style="font-size:12px;">
+        Use offline (local browser only — no sharing)
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main App ─────────────────────────────────────────────── -->
+<div id="mainApp" style="display:none;">
+
+  <div class="header">
+    <div class="header-left">
+      <div class="header-logo">UK</div>
+      <div>
+        <div class="header-title">UKSDS Task Manager</div>
+        <div class="header-sub">Skill Development & Employment Dept, Uttarakhand</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div id="syncBadge" class="sync-badge sync-ok">● Live</div>
+      <button class="btn btn-ghost btn-sm" onclick="refreshTasks()" title="Refresh from server">↻ Refresh</button>
+      <button class="btn btn-primary btn-sm" onclick="openModal()">＋ Add Task</button>
+      <button class="btn btn-ghost btn-sm" style="font-size:11px;" onclick="changeServer()" title="Change server URL">⚙</button>
+    </div>
+  </div>
+
+  <div class="offline-bar" id="offlineBar">
+    ⚡ Offline mode — changes saved locally only. Reconnect to sync with team.
+    <button class="btn btn-sm btn-cancel" onclick="changeServer()" style="margin-left:auto;">Reconnect</button>
+  </div>
+
+  <div class="alert-banner" id="alertBanner">
+    <span>⚠️</span><div id="alertList" style="flex:1;"></div>
+    <button class="icon-btn" style="color:inherit;font-size:11px;" onclick="document.getElementById('alertBanner').classList.remove('show')">✕</button>
+  </div>
+
+  <div class="stats-bar" id="statsBar"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Views</div>
+        <button class="sidebar-item active" id="nav-all" onclick="setView('all')">📋 All Tasks <span class="sidebar-count" id="cnt-all">0</span></button>
+        <button class="sidebar-item" id="nav-today" onclick="setView('today')">📅 Due Today <span class="sidebar-count" id="cnt-today">0</span></button>
+        <button class="sidebar-item" id="nav-overdue" onclick="setView('overdue')">🚨 Overdue <span class="sidebar-count" id="cnt-overdue">0</span></button>
+        <button class="sidebar-item" id="nav-week" onclick="setView('week')">📆 This Week <span class="sidebar-count" id="cnt-week">0</span></button>
+        <button class="sidebar-item" id="nav-done" onclick="setView('done')">✅ Completed <span class="sidebar-count" id="cnt-done">0</span></button>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Priority</div>
+        <button class="sidebar-item" id="nav-critical" onclick="setView('critical')">🔴 Critical <span class="sidebar-count" id="cnt-critical">0</span></button>
+        <button class="sidebar-item" id="nav-high" onclick="setView('high')">🟠 High <span class="sidebar-count" id="cnt-high">0</span></button>
+        <button class="sidebar-item" id="nav-medium" onclick="setView('medium')">🟡 Medium <span class="sidebar-count" id="cnt-medium">0</span></button>
+        <button class="sidebar-item" id="nav-low" onclick="setView('low')">🟢 Low <span class="sidebar-count" id="cnt-low">0</span></button>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Schemes & Programmes</div>
+        <button class="sidebar-item" id="nav-NAPS" onclick="setView('NAPS')">🔧 NAPS <span class="sidebar-count" id="cnt-NAPS">0</span></button>
+        <button class="sidebar-item" id="nav-CMIS" onclick="setView('CMIS')">📄 CMIS <span class="sidebar-count" id="cnt-CMIS">0</span></button>
+        <button class="sidebar-item" id="nav-OverseasPlacement" onclick="setView('OverseasPlacement')">✈️ Overseas Placement <span class="sidebar-count" id="cnt-OverseasPlacement">0</span></button>
+        <button class="sidebar-item" id="nav-CoE" onclick="setView('CoE')">🏅 CoE <span class="sidebar-count" id="cnt-CoE">0</span></button>
+        <button class="sidebar-item" id="nav-DST" onclick="setView('DST')">🎓 DST <span class="sidebar-count" id="cnt-DST">0</span></button>
+        <button class="sidebar-item" id="nav-PMKVY" onclick="setView('PMKVY')">🇮🇳 PMKVY <span class="sidebar-count" id="cnt-PMKVY">0</span></button>
+        <button class="sidebar-item" id="nav-ELSTP" onclick="setView('ELSTP')">📘 ELSTP <span class="sidebar-count" id="cnt-ELSTP">0</span></button>
+        <button class="sidebar-item" id="nav-DSDP" onclick="setView('DSDP')">📗 DSDP <span class="sidebar-count" id="cnt-DSDP">0</span></button>
+        <button class="sidebar-item" id="nav-DSDEC" onclick="setView('DSDEC')">📙 DSDEC <span class="sidebar-count" id="cnt-DSDEC">0</span></button>
+        <button class="sidebar-item" id="nav-PMSETU" onclick="setView('PMSETU')">🌉 PM SETU <span class="sidebar-count" id="cnt-PMSETU">0</span></button>
+        <button class="sidebar-item" id="nav-MCTP" onclick="setView('MCTP')">🏗️ MCTP <span class="sidebar-count" id="cnt-MCTP">0</span></button>
+        <button class="sidebar-item" id="nav-ITIHolistic" onclick="setView('ITIHolistic')">📚 ITI Holistic Training <span class="sidebar-count" id="cnt-ITIHolistic">0</span></button>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Infrastructure & Institutions</div>
+        <button class="sidebar-item" id="nav-ITIEstablishment" onclick="setView('ITIEstablishment')">🏫 ITI Establishment <span class="sidebar-count" id="cnt-ITIEstablishment">0</span></button>
+        <button class="sidebar-item" id="nav-DSDEEstablishment" onclick="setView('DSDEEstablishment')">🏢 DSDE Establishment <span class="sidebar-count" id="cnt-DSDEEstablishment">0</span></button>
+        <button class="sidebar-item" id="nav-UKSDSEstablishment" onclick="setView('UKSDSEstablishment')">🏛️ UKSDS Establishment <span class="sidebar-count" id="cnt-UKSDSEstablishment">0</span></button>
+        <button class="sidebar-item" id="nav-SkillCensus" onclick="setView('SkillCensus')">🗂️ Skill Census <span class="sidebar-count" id="cnt-SkillCensus">0</span></button>
+        <button class="sidebar-item" id="nav-EAP" onclick="setView('EAP')">🌐 EAP/Multilateral <span class="sidebar-count" id="cnt-EAP">0</span></button>
+        <button class="sidebar-item" id="nav-Infrastructure" onclick="setView('Infrastructure')">🔨 Infrastructure <span class="sidebar-count" id="cnt-Infrastructure">0</span></button>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Governance & Legal</div>
+        <button class="sidebar-item" id="nav-Court" onclick="setView('Court')">⚖️ Court <span class="sidebar-count" id="cnt-Court">0</span></button>
+        <button class="sidebar-item" id="nav-VIPReferences" onclick="setView('VIPReferences')">📌 VIP References <span class="sidebar-count" id="cnt-VIPReferences">0</span></button>
+        <button class="sidebar-item" id="nav-Cabinet" onclick="setView('Cabinet')">🗝️ Cabinet <span class="sidebar-count" id="cnt-Cabinet">0</span></button>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <input type="text" class="search-input" id="searchInput" placeholder="🔍 Search tasks, officers..." oninput="renderTasks()">
+          <select class="filter-select" id="filterStatus" onchange="renderTasks()">
+            <option value="">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="in-progress">In Progress</option>
+            <option value="blocked">Blocked</option>
+            <option value="done">Done</option>
+          </select>
+          <select class="filter-select" id="filterOfficer" onchange="renderTasks()">
+            <option value="">All Officers</option>
+          </select>
+        </div>
+        <button class="btn btn-cancel btn-sm" onclick="openModal()">＋ Add Task</button>
+      </div>
+      <div id="taskList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal ────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">Add New Task</h3>
+      <button class="icon-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group" style="flex:2">
+          <label class="form-label">Task Title *</label>
+          <input type="text" class="form-input" id="f_title" placeholder="Describe the task clearly">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Workstream</label>
+          <select class="form-select" id="f_workstream">
+            <option value="NAPS">NAPS</option>
+            <option value="CMIS">CMIS</option>
+            <option value="OverseasPlacement">Overseas Placement</option>
+            <option value="CoE">CoE</option>
+            <option value="DST">DST</option>
+            <option value="PMKVY">PMKVY</option>
+            <option value="ELSTP">ELSTP</option>
+            <option value="DSDP">DSDP</option>
+            <option value="DSDEC">DSDEC</option>
+            <option value="PMSETU">PM SETU</option>
+            <option value="MCTP">MCTP</option>
+            <option value="ITIHolistic">ITI Holistic Training</option>
+            <option value="ITIEstablishment">ITI Establishment</option>
+            <option value="DSDEEstablishment">DSDE Establishment</option>
+            <option value="UKSDSEstablishment">UKSDS Establishment</option>
+            <option value="SkillCensus">Skill Census</option>
+            <option value="EAP">EAP/Multilateral</option>
+            <option value="Infrastructure">Infrastructure</option>
+            <option value="Court">Court</option>
+            <option value="VIPReferences">VIP References</option>
+            <option value="Cabinet">Cabinet</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <select class="form-select" id="f_priority">
+            <option value="critical">🔴 Critical</option>
+            <option value="high">🟠 High</option>
+            <option value="medium" selected>🟡 Medium</option>
+            <option value="low">🟢 Low</option>
+            <option value="info">🔵 Info/Track</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-select" id="f_status">
+            <option value="pending">Pending</option>
+            <option value="in-progress">In Progress</option>
+            <option value="blocked">Blocked</option>
+            <option value="done">Done</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Due Date</label>
+          <input type="date" class="form-input" id="f_due">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Responsible Officer / Dept</label>
+          <input type="text" class="form-input" id="f_officer" placeholder="e.g. Director UKSDS">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Time to Complete</label>
+          <input type="text" class="form-input" id="f_duration" placeholder="e.g. 2 weeks">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Notes / Progress Update</label>
+          <textarea class="form-textarea" id="f_notes" placeholder="Context, dependencies, mid-term progress..."></textarea>
+        </div>
+      </div>
+      <div style="margin-top:14px;">
+        <div class="form-label" style="margin-bottom:7px;">MILESTONES / SUB-TASKS</div>
+        <div id="subtaskFormList"></div>
+        <div class="add-subtask-row">
+          <input type="text" class="form-input" id="newSubtaskTitle" placeholder="Add milestone or sub-task..." style="flex:1">
+          <input type="text" class="form-input" id="newSubtaskOfficer" placeholder="Officer" style="max-width:120px">
+          <input type="date" class="form-input" id="newSubtaskDue" style="max-width:135px">
+          <button class="btn btn-accent btn-sm" onclick="addSubtaskField()">＋</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-accent" id="saveBtn" onclick="saveTask()">Save Task</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────
+const STORE_KEY   = 'uksds_tasks_v3';
+const URL_KEY     = 'uksds_script_url';
+const OFFLINE_KEY = 'uksds_offline';
+const ALL_WS = ['NAPS','CMIS','OverseasPlacement','CoE','DST','PMKVY','ELSTP','DSDP',
+                'DSDEC','PMSETU','MCTP','ITIHolistic','ITIEstablishment','DSDEEstablishment',
+                'UKSDSEstablishment','SkillCensus','EAP','Infrastructure','Court','VIPReferences','Cabinet'];
+
+let tasks        = [];
+let editingId    = null;
+let currentView  = 'all';
+let pendingSubs  = [];
+let scriptUrl    = '';
+let isOffline    = false;
+let saveTimer    = null;
+
+// ── Boot ──────────────────────────────────────────────────────
+window.onload = function() {
+  scriptUrl = localStorage.getItem(URL_KEY) || '';
+  isOffline = localStorage.getItem(OFFLINE_KEY) === '1';
+  if (scriptUrl || isOffline) {
+    launchApp();
+  }
+  // else: setup screen stays visible
+};
+
+function connectToSheet() {
+  const val = document.getElementById('scriptUrlInput').value.trim();
+  if (!val.startsWith('https://script.google.com')) {
+    setSetupMsg('⚠ That does not look like a valid Apps Script URL. It should start with https://script.google.com/macros/s/…', true);
+    return;
+  }
+  setSetupMsg('⏳ Connecting…', false);
+  fetch(val + '?action=ping', { method: 'GET', mode: 'cors' })
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) {
+        localStorage.setItem(URL_KEY, val);
+        localStorage.removeItem(OFFLINE_KEY);
+        scriptUrl = val;
+        isOffline = false;
+        launchApp();
+      } else {
+        setSetupMsg('⚠ Connected but server returned an error: ' + (d.error||'unknown'), true);
+      }
+    })
+    .catch(() => setSetupMsg('⚠ Could not reach the URL. Check it is deployed as "Anyone" access.', true));
+}
+
+function setSetupMsg(msg, isError) {
+  const el = document.getElementById('setupMsg');
+  el.textContent = msg;
+  el.style.color = isError ? 'var(--overdue)' : 'var(--ink-muted)';
+}
+
+function useOfflineMode() {
+  localStorage.setItem(OFFLINE_KEY, '1');
+  isOffline = true;
+  scriptUrl = '';
+  launchApp();
+}
+
+function changeServer() {
+  localStorage.removeItem(URL_KEY);
+  localStorage.removeItem(OFFLINE_KEY);
+  location.reload();
+}
+
+function launchApp() {
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  if (isOffline) {
+    document.getElementById('offlineBar').classList.add('show');
+    tasks = loadLocal();
+    renderTasks();
+    checkAlerts();
+  } else {
+    refreshTasks();
+    setInterval(refreshTasks, 60000); // auto-refresh every 60s
+    setInterval(checkAlerts, 30000);
+  }
+}
+
+// ── API calls (all via GET + URL params to avoid CORS) ────────
+function setSyncBadge(state, msg) {
+  const b = document.getElementById('syncBadge');
+  b.className = 'sync-badge sync-' + state;
+  const icons = { ok:'●', saving:'<span class="spin">↻</span>', error:'⚠', loading:'<span class="spin">↻</span>' };
+  b.innerHTML = (icons[state]||'●') + ' ' + msg;
+}
+
+// All requests go through GET with a 'payload' param to avoid CORS
+async function gasRequest(params) {
+  const url = scriptUrl + '?' + new URLSearchParams(params).toString();
+  const res = await fetch(url, { method: 'GET', mode: 'cors' });
+  return res.json();
+}
+
+async function connectToSheetTest(url) {
+  const testUrl = url + '?' + new URLSearchParams({ action: 'ping' }).toString();
+  const res = await fetch(testUrl, { method: 'GET', mode: 'cors' });
+  return res.json();
+}
+
+async function refreshTasks() {
+  if (isOffline) return;
+  setSyncBadge('loading', 'Loading…');
+  try {
+    const data = await gasRequest({ action: 'getTasks' });
+    if (data.error) throw new Error(data.error);
+    tasks = data.tasks || [];
+    saveLocal(tasks);
+    setSyncBadge('ok', 'Live');
+    renderTasks();
+    checkAlerts();
+  } catch(e) {
+    setSyncBadge('error', 'Offline');
+    tasks = loadLocal();
+    renderTasks();
+    checkAlerts();
+  }
+}
+
+async function pushTask(task) {
+  if (isOffline) { saveLocal(tasks); return; }
+  setSyncBadge('saving', 'Saving…');
+  try {
+    // Encode task as JSON string in a GET param
+    const data = await gasRequest({ action: 'saveTask', payload: JSON.stringify(task) });
+    if (data.error) throw new Error(data.error);
+    saveLocal(tasks);
+    setSyncBadge('ok', 'Saved ✓');
+    setTimeout(() => setSyncBadge('ok', 'Live'), 2000);
+  } catch(e) {
+    setSyncBadge('error', 'Save failed — stored locally');
+    saveLocal(tasks);
+  }
+}
+
+async function pushDelete(id) {
+  if (isOffline) { saveLocal(tasks); return; }
+  setSyncBadge('saving', 'Deleting…');
+  try {
+    const data = await gasRequest({ action: 'deleteTask', id });
+    if (data.error) throw new Error(data.error);
+    saveLocal(tasks);
+    setSyncBadge('ok', 'Live');
+  } catch(e) {
+    setSyncBadge('error', 'Delete failed');
+  }
+}
+
+// ── Local storage ─────────────────────────────────────────────
+function saveLocal(t) { localStorage.setItem(STORE_KEY, JSON.stringify(t)); }
+function loadLocal()  {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+
+// ── Utility ───────────────────────────────────────────────────
+function uid()  { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+function today(){ return new Date().toISOString().slice(0,10); }
+
+function daysDiff(due) {
+  if (!due) return 9999;
+  const now = new Date(); now.setHours(0,0,0,0);
+  const d   = new Date(due); d.setHours(0,0,0,0);
+  return Math.round((d - now) / 86400000);
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+}
+function dueClass(due, done) {
+  if (done) return 'due-done';
+  const diff = daysDiff(due);
+  if (diff < 0) return 'overdue';
+  if (diff <= 3) return 'soon';
+  return 'ok';
+}
+function dueLabel(due, done) {
+  if (done) return '✓ Done';
+  if (!due) return 'No deadline';
+  const diff = daysDiff(due);
+  if (diff < 0)  return `⚠ ${Math.abs(diff)}d overdue`;
+  if (diff === 0) return '📅 Due today';
+  if (diff <= 3)  return `⏰ In ${diff}d`;
+  return `📅 ${fmtDate(due)}`;
+}
+function subtaskProgress(t) {
+  if (!t.subtasks||!t.subtasks.length) return t.done ? 100 : 0;
+  return Math.round(t.subtasks.filter(s=>s.done).length / t.subtasks.length * 100);
+}
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+const pOrd = {critical:0,high:1,medium:2,low:3,info:4};
+
+// ── Filters ───────────────────────────────────────────────────
+function getFiltered() {
+  const q  = (document.getElementById('searchInput')?.value||'').toLowerCase();
+  const fs = document.getElementById('filterStatus')?.value||'';
+  const fo = document.getElementById('filterOfficer')?.value||'';
+  return tasks.filter(t => {
+    const diff = daysDiff(t.due);
+    if (currentView==='today'   && !(t.done===false&&diff===0)) return false;
+    if (currentView==='overdue' && !(t.done===false&&diff<0))   return false;
+    if (currentView==='week'    && !(t.done===false&&diff>=0&&diff<=7)) return false;
+    if (currentView==='done'    && !t.done) return false;
+    if (['critical','high','medium','low','info'].includes(currentView) && t.priority!==currentView) return false;
+    if (ALL_WS.includes(currentView) && t.workstream!==currentView) return false;
+    if (q && !t.title.toLowerCase().includes(q) && !(t.officer||'').toLowerCase().includes(q) && !(t.notes||'').toLowerCase().includes(q)) return false;
+    if (fs && t.status!==fs) return false;
+    if (fo && t.officer!==fo) return false;
+    return true;
+  }).sort((a,b) => {
+    if (a.done!==b.done) return a.done?1:-1;
+    const dA=daysDiff(a.due), dB=daysDiff(b.due);
+    if (dA<0&&dB>=0) return -1;
+    if (dB<0&&dA>=0) return 1;
+    if ((pOrd[a.priority]||9)!==(pOrd[b.priority]||9)) return (pOrd[a.priority]||9)-(pOrd[b.priority]||9);
+    return dA-dB;
+  });
+}
+
+// ── Stats ─────────────────────────────────────────────────────
+function updateStats() {
+  const cnt = {
+    all:tasks.length,
+    today:tasks.filter(t=>!t.done&&daysDiff(t.due)===0).length,
+    overdue:tasks.filter(t=>!t.done&&daysDiff(t.due)<0).length,
+    week:tasks.filter(t=>!t.done&&daysDiff(t.due)>=0&&daysDiff(t.due)<=7).length,
+    done:tasks.filter(t=>t.done).length,
+    critical:tasks.filter(t=>!t.done&&t.priority==='critical').length,
+    high:tasks.filter(t=>!t.done&&t.priority==='high').length,
+    medium:tasks.filter(t=>!t.done&&t.priority==='medium').length,
+    low:tasks.filter(t=>!t.done&&t.priority==='low').length,
+  };
+  ALL_WS.forEach(ws => { cnt[ws] = tasks.filter(t=>t.workstream===ws).length; });
+  Object.entries(cnt).forEach(([k,v]) => { const el=document.getElementById('cnt-'+k); if(el) el.textContent=v; });
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat-pill"><span class="dot dot-critical"></span><span class="num">${cnt.critical}</span> Critical</div>
+    <div class="stat-pill"><span class="dot dot-high"></span><span class="num">${cnt.high}</span> High</div>
+    <div class="stat-pill"><span class="dot dot-medium"></span><span class="num">${cnt.medium}</span> Medium</div>
+    <div class="stat-pill"><span class="dot dot-low"></span><span class="num">${cnt.low}</span> Low</div>
+    <div class="stat-pill" style="margin-left:auto"><span class="dot dot-done"></span><span class="num">${cnt.done}</span> Done</div>
+    <div class="stat-pill" style="color:var(--overdue)"><span class="num">${cnt.overdue}</span> ⚠ Overdue</div>`;
+}
+
+function checkAlerts() {
+  const overdue = tasks.filter(t=>!t.done&&daysDiff(t.due)<0);
+  const today_  = tasks.filter(t=>!t.done&&daysDiff(t.due)===0);
+  const soon    = tasks.filter(t=>!t.done&&daysDiff(t.due)>=1&&daysDiff(t.due)<=2);
+  const blocked = tasks.filter(t=>t.status==='blocked'&&!t.done);
+  let msgs = [];
+  if (overdue.length) msgs.push(`🚨 ${overdue.length} OVERDUE`);
+  if (today_.length)  msgs.push(`📅 ${today_.length} due TODAY`);
+  if (soon.length)    msgs.push(`⏰ ${soon.length} due in 1-2 days`);
+  if (blocked.length) msgs.push(`🔒 ${blocked.length} BLOCKED`);
+  const b = document.getElementById('alertBanner');
+  if (msgs.length) { b.classList.add('show'); document.getElementById('alertList').textContent = msgs.join('  |  '); }
+  else b.classList.remove('show');
+}
+
+// ── Render ────────────────────────────────────────────────────
+function renderTasks() {
+  updateStats();
+  const filtered = getFiltered();
+  const c = document.getElementById('taskList');
+  if (!filtered.length) {
+    c.innerHTML = `<div class="empty-state"><div class="ei">📋</div><h3>No tasks here</h3><p>Add a task or change your filter</p></div>`;
+    return;
+  }
+  c.innerHTML = filtered.map(renderCard).join('');
+  // Update officer filter
+  const officers = [...new Set(tasks.map(t=>t.officer).filter(Boolean))].sort();
+  const sel = document.getElementById('filterOfficer');
+  const cur = sel.value;
+  sel.innerHTML = `<option value="">All Officers</option>` + officers.map(o=>`<option value="${esc(o)}"${o===cur?' selected':''}>${esc(o)}</option>`).join('');
+}
+
+function renderCard(t) {
+  const prog = subtaskProgress(t);
+  const subs = Array.isArray(t.subtasks) ? t.subtasks : [];
+  const dc   = dueClass(t.due, t.done);
+  const dl   = dueLabel(t.due, t.done);
+  const pLabel= {critical:'🔴 Critical',high:'🟠 High',medium:'🟡 Medium',low:'🟢 Low',info:'🔵 Info'}[t.priority]||t.priority;
+  const sLabel= {pending:'Pending','in-progress':'In Progress',blocked:'🔒 Blocked',done:'✓ Done'}[t.status]||t.status;
+  const sClass= {'pending':'tag-pending','in-progress':'tag-inprog','blocked':'tag-blocked','done':'tag-done'}[t.status]||'tag-pending';
+  const wsLabel = t.workstream||'';
+
+  const subsHtml = subs.length ? `
+    <div class="subtasks" id="subs-${t.id}">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-muted);margin-bottom:7px;">
+        Milestones (${subs.filter(s=>s.done).length}/${subs.length} done)
+      </div>
+      ${subs.map(s=>`
+        <div class="subtask-item">
+          <div class="subtask-check ${s.done?'checked':''}" onclick="toggleSubtask('${t.id}','${s.id}')"></div>
+          <div class="subtask-body">
+            <div class="subtask-title ${s.done?'done-title':''}">${esc(s.title)}</div>
+            <div class="subtask-meta">${s.officer?`<span>👤 ${esc(s.officer)}</span>`:''}</div>
+          </div>
+          <div class="subtask-due ${dueClass(s.due,s.done)}">${s.due?dueLabel(s.due,s.done):''}</div>
+        </div>`).join('')}
+    </div>` : '';
+
+  const notesHtml = t.notes ? `
+    <div class="task-notes" id="notes-${t.id}">
+      <div class="notes-label">Notes / Progress</div>
+      <div>${esc(t.notes)}</div>
+    </div>` : '';
+
+  return `
+  <div class="task-card border-${t.priority}" id="card-${t.id}" style="${t.done?'opacity:.65':''}">
+    <div class="task-header" onclick="toggleCard('${t.id}')">
+      <div class="task-checkbox ${t.done?'checked':''}" onclick="event.stopPropagation();toggleDone('${t.id}')"></div>
+      <div class="task-main">
+        <div class="task-title ${t.done?'done-title':''}">
+          ${esc(t.title)}
+          <span class="tag tag-${t.priority}">${pLabel}</span>
+          <span class="tag ${sClass}">${sLabel}</span>
+        </div>
+        <div class="task-meta">
+          <span class="chip">${esc(wsLabel)}</span>
+          ${t.officer?`<span>👤 ${esc(t.officer)}</span><span style="color:var(--border)">·</span>`:''}
+          ${t.duration?`<span>⏱ ${esc(t.duration)}</span><span style="color:var(--border)">·</span>`:''}
+          <span class="due-indicator ${dc}">${dl}</span>
+          ${subs.length?`<span style="color:var(--border)">·</span><span>📌 ${subs.length} milestones</span>`:''}
+        </div>
+      </div>
+      <div class="task-actions" onclick="event.stopPropagation()">
+        <button class="icon-btn" title="Edit" onclick="editTask('${t.id}')">✏️</button>
+        <button class="icon-btn" title="Delete" onclick="deleteTask('${t.id}')">🗑️</button>
+      </div>
+    </div>
+    ${prog>0||subs.length?`<div class="progress-wrap"><div class="progress-bar"><div class="progress-fill fill-${t.priority}" style="width:${prog}%"></div></div><span class="progress-pct">${prog}%</span></div>`:''}
+    ${subsHtml}${notesHtml}
+  </div>`;
+}
+
+// ── Actions ───────────────────────────────────────────────────
+function toggleCard(id) {
+  document.getElementById('subs-'+id)?.classList.toggle('open');
+  document.getElementById('notes-'+id)?.classList.toggle('open');
+}
+
+function toggleDone(id) {
+  const t = tasks.find(x=>x.id===id); if (!t) return;
+  t.done = !t.done;
+  t.status = t.done ? 'done' : 'in-progress';
+  if (t.done) t.completedDate = today(); else delete t.completedDate;
+  renderTasks(); checkAlerts();
+  pushTask(t);
+}
+
+function toggleSubtask(taskId, subId) {
+  const t = tasks.find(x=>x.id===taskId); if (!t) return;
+  const s = (t.subtasks||[]).find(x=>x.id===subId); if (!s) return;
+  s.done = !s.done;
+  const prog = subtaskProgress(t);
+  if (prog===100) t.status='done'; else if (prog>0) t.status='in-progress';
+  renderTasks();
+  pushTask(t);
+}
+
+function deleteTask(id) {
+  if (!confirm('Delete this task and all its milestones?')) return;
+  tasks = tasks.filter(t=>t.id!==id);
+  renderTasks(); checkAlerts();
+  pushDelete(id);
+}
+
+function setView(v) {
+  currentView = v;
+  document.querySelectorAll('.sidebar-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('nav-'+v)?.classList.add('active');
+  renderTasks();
+}
+
+// ── Modal ─────────────────────────────────────────────────────
+function openModal(id) {
+  editingId = id||null; pendingSubs = [];
+  if (id) {
+    const t = tasks.find(x=>x.id===id); if (!t) return;
+    document.getElementById('modalTitle').textContent = 'Edit Task';
+    document.getElementById('f_title').value      = t.title||'';
+    document.getElementById('f_workstream').value = t.workstream||'CMIS';
+    document.getElementById('f_priority').value   = t.priority||'medium';
+    document.getElementById('f_status').value     = t.status||'pending';
+    document.getElementById('f_due').value        = t.due||'';
+    document.getElementById('f_officer').value    = t.officer||'';
+    document.getElementById('f_duration').value   = t.duration||'';
+    document.getElementById('f_notes').value      = t.notes||'';
+    pendingSubs = (t.subtasks||[]).map(s=>({...s}));
+  } else {
+    document.getElementById('modalTitle').textContent = 'Add New Task';
+    ['f_title','f_officer','f_duration','f_notes','f_due'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('f_priority').value = 'medium';
+    document.getElementById('f_status').value   = 'pending';
+  }
+  renderSubFormList();
+  document.getElementById('modalOverlay').classList.add('open');
+  document.getElementById('f_title').focus();
+}
+function editTask(id) { openModal(id); }
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+function renderSubFormList() {
+  const c = document.getElementById('subtaskFormList');
+  if (!pendingSubs.length) { c.innerHTML=''; return; }
+  c.innerHTML = pendingSubs.map((s,i)=>`
+    <div style="display:flex;gap:5px;align-items:center;margin-bottom:5px;font-size:13px;">
+      <div class="subtask-check ${s.done?'checked':''}" onclick="pendingSubs[${i}].done=!pendingSubs[${i}].done;renderSubFormList()"></div>
+      <span style="flex:1;${s.done?'text-decoration:line-through;color:var(--ink-muted);':''}">${esc(s.title)}</span>
+      ${s.officer?`<span style="color:var(--ink-muted);font-size:11px;">👤 ${esc(s.officer)}</span>`:''}
+      ${s.due?`<span style="color:var(--ink-muted);font-size:11px;">📅 ${fmtDate(s.due)}</span>`:''}
+      <button class="icon-btn" style="width:20px;height:20px;font-size:11px" onclick="pendingSubs.splice(${i},1);renderSubFormList()">✕</button>
+    </div>`).join('');
+}
+
+function addSubtaskField() {
+  const t=document.getElementById('newSubtaskTitle').value.trim();
+  if (!t) { document.getElementById('newSubtaskTitle').focus(); return; }
+  pendingSubs.push({id:uid(),title:t,officer:document.getElementById('newSubtaskOfficer').value.trim(),due:document.getElementById('newSubtaskDue').value,done:false});
+  ['newSubtaskTitle','newSubtaskOfficer','newSubtaskDue'].forEach(id=>document.getElementById(id).value='');
+  renderSubFormList();
+  document.getElementById('newSubtaskTitle').focus();
+}
+
+async function saveTask() {
+  const title = document.getElementById('f_title').value.trim();
+  if (!title) { document.getElementById('f_title').focus(); return; }
+  document.getElementById('saveBtn').disabled = true;
+  document.getElementById('saveBtn').textContent = 'Saving…';
+
+  const data = {
+    title,
+    workstream: document.getElementById('f_workstream').value,
+    priority:   document.getElementById('f_priority').value,
+    status:     document.getElementById('f_status').value,
+    due:        document.getElementById('f_due').value,
+    officer:    document.getElementById('f_officer').value.trim(),
+    duration:   document.getElementById('f_duration').value.trim(),
+    notes:      document.getElementById('f_notes').value.trim(),
+    subtasks:   pendingSubs,
+    done:       document.getElementById('f_status').value === 'done',
+  };
+
+  if (editingId) {
+    const idx = tasks.findIndex(t=>t.id===editingId);
+    if (idx>=0) { tasks[idx]={...tasks[idx],...data}; if(data.done&&!tasks[idx].completedDate) tasks[idx].completedDate=today(); }
+  } else {
+    data.id = uid(); data.created = today();
+    tasks.unshift(data);
+  }
+
+  closeModal();
+  renderTasks(); checkAlerts();
+  await pushTask(editingId ? tasks.find(t=>t.id===editingId) : tasks[0]);
+
+  document.getElementById('saveBtn').disabled = false;
+  document.getElementById('saveBtn').textContent = 'Save Task';
+}
+
+// ── Keyboard ──────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') closeModal();
+  if ((e.metaKey||e.ctrlKey) && e.key==='n') { e.preventDefault(); openModal(); }
+  if ((e.metaKey||e.ctrlKey) && e.key==='r' && document.getElementById('mainApp').style.display!=='none') {
+    e.preventDefault(); refreshTasks();
+  }
+});
+</script>
+</body>
+</html>
